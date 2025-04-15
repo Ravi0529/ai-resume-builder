@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { Loader2 } from "lucide-react";
+import { Loader2, Download } from "lucide-react";
 import { MdEmail, MdPhone, MdLocationOn, MdPerson } from "react-icons/md";
 import {
   FaLinkedin,
@@ -26,6 +26,8 @@ export default function Builder() {
   const [inputText, setInputText] = useState("");
   const [resume, setResume] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const resumeRef = useRef<HTMLDivElement>(null);
 
   const handleGenerate = async () => {
     setLoading(true);
@@ -42,6 +44,40 @@ export default function Builder() {
       console.error("Error:", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDownloadPDF = async () => {
+    try {
+      setDownloadingPdf(true);
+      const element = resumeRef.current;
+      if (!element) return;
+
+      const html2pdf = (await import("html2pdf.js")).default;
+      const opt = {
+        margin: [10, 10, 10, 10],
+        filename: "resume.pdf",
+        image: { type: "jpeg", quality: 1 },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          removeContainer: true,
+        },
+        jsPDF: {
+          unit: "mm",
+          format: "a4",
+          orientation: "portrait",
+          compress: true,
+        },
+      };
+
+      await html2pdf().set(opt).from(element).save();
+    } catch (error) {
+      console.error("PDF generation failed:", error);
+      alert("Failed to generate PDF. Please try again.");
+    } finally {
+      setDownloadingPdf(false);
     }
   };
 
@@ -108,386 +144,420 @@ export default function Builder() {
               </div>
             ) : resume ? (
               <div className="space-y-6">
-                {/* Name */}
-                <h1 className="text-2xl font-bold text-gray-800">
-                  {resume.name}
-                </h1>
+                <div className="flex justify-between items-center mb-4">
+                  <h1 className="text-md font-medium text-gray-800">
+                    resume.pdf
+                  </h1>
+                  <button
+                    onClick={handleDownloadPDF}
+                    disabled={downloadingPdf}
+                    className="flex items-center gap-2 bg-[#2563eb] hover:bg-[#1d4ed8] disabled:bg-[#93c5fd] text-white px-4 py-2 rounded-lg transition-colors"
+                  >
+                    {downloadingPdf ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Generating PDF...
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-4 h-4" />
+                        Download PDF
+                      </>
+                    )}
+                  </button>
+                </div>
+                <div
+                  ref={resumeRef}
+                  className="space-y-6 rounded-lg"
+                  style={{
+                    maxWidth: "210mm",
+                    backgroundColor: "#ffffff",
+                    padding: "2rem",
+                    boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.1)",
+                    color: "#1f2937",
+                  }}
+                >
+                  {/* Name */}
+                  <h1 className="text-[#1f2937] text-2xl font-bold">
+                    {resume.name}
+                  </h1>
 
-                {/* Contact */}
-                {resume.contact && (
-                  <div className="flex flex-wrap gap-3 text-sm text-gray-600">
-                    {resume.contact.email && (
-                      <span className="flex items-center gap-1">
-                        <MdEmail className="w-4 h-4 text-gray-600" />
-                        {resume.contact.email}
-                      </span>
-                    )}
-                    {resume.contact.phone && (
-                      <span className="flex items-center gap-1">
-                        <MdPhone className="w-4 h-4 text-gray-600" />
-                        {resume.contact.phone}
-                      </span>
-                    )}
-                    {resume.contact.linkedin && (
-                      <a
-                        href={resume.contact.linkedin}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1 text-gray-600 hover:text-gray-800"
-                      >
-                        <FaLinkedin className="w-4 h-4" />
-                        LinkedIn
-                      </a>
-                    )}
-                    {resume.contact.github && (
-                      <a
-                        href={resume.contact.github}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1 text-gray-600 hover:text-gray-800"
-                      >
-                        <FaGithub className="w-4 h-4" />
-                        GitHub
-                      </a>
-                    )}
-                    {resume.contact.website && (
-                      <a
-                        href={resume.contact.website}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1 text-gray-600 hover:text-gray-800"
-                      >
-                        <FaGlobe className="w-4 h-4" />
-                        Website
-                      </a>
-                    )}
-                    {resume.contact.twitter && (
-                      <a
-                        href={resume.contact.twitter}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1 text-gray-600 hover:text-gray-800"
-                      >
-                        <FaTwitter className="w-4 h-4" />
-                        Twitter
-                      </a>
-                    )}
-                    {resume.contact.address && (
-                      <span className="flex items-center gap-1">
-                        <MdLocationOn className="w-4 h-4 text-gray-600" />
-                        {resume.contact.address}
-                      </span>
-                    )}
-                  </div>
-                )}
-
-                {/* Summary */}
-                {resume.summary && (
-                  <div>
-                    <h2 className="text-lg font-semibold text-gray-800 border-b pb-1 flex items-center gap-2">
-                      <MdPerson className="w-5 h-5 text-gray-600" />
-                      Summary
-                    </h2>
-                    <p className="text-gray-600 mt-2">{resume.summary}</p>
-                  </div>
-                )}
-
-                {/* Education */}
-                {resume.education && (
-                  <div>
-                    <h2 className="text-lg font-semibold text-gray-800 border-b pb-1 flex items-center gap-2">
-                      <FaGraduationCap className="w-5 h-5 text-gray-600" />
-                      Education
-                    </h2>
-                    <div className="space-y-2 mt-2">
-                      {resume.education.map((edu: any, idx: number) => (
-                        <div key={idx} className="p-4">
-                          <p className="font-semibold text-gray-800">
-                            {edu.degree}
-                          </p>
-                          <p className="text-sm text-gray-600">
-                            {typeof edu.institution === "object"
-                              ? edu.institution.name
-                              : edu.institution}{" "}
-                            {edu.year ? `(${edu.year})` : ""}
-                          </p>
-                        </div>
-                      ))}
+                  {/* Contact */}
+                  {resume.contact && (
+                    <div className="flex flex-wrap gap-3 text-sm text-[#4b5563]">
+                      {resume.contact.email && (
+                        <span className="flex items-center gap-1">
+                          <MdEmail className="w-4 h-4 text-[#4b5563]" />
+                          {resume.contact.email}
+                        </span>
+                      )}
+                      {resume.contact.phone && (
+                        <span className="flex items-center gap-1">
+                          <MdPhone className="w-4 h-4 text-[#4b5563]" />
+                          {resume.contact.phone}
+                        </span>
+                      )}
+                      {resume.contact.linkedin && (
+                        <a
+                          href={resume.contact.linkedin}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 text-[#4b5563] hover:text-[#1f2937]"
+                        >
+                          <FaLinkedin className="w-4 h-4" />
+                          LinkedIn
+                        </a>
+                      )}
+                      {resume.contact.github && (
+                        <a
+                          href={resume.contact.github}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 text-[#4b5563] hover:text-[#1f2937]"
+                        >
+                          <FaGithub className="w-4 h-4" />
+                          GitHub
+                        </a>
+                      )}
+                      {resume.contact.website && (
+                        <a
+                          href={resume.contact.website}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 text-[#4b5563] hover:text-[#1f2937]"
+                        >
+                          <FaGlobe className="w-4 h-4" />
+                          Website
+                        </a>
+                      )}
+                      {resume.contact.twitter && (
+                        <a
+                          href={resume.contact.twitter}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 text-[#4b5563] hover:text-[#1f2937]"
+                        >
+                          <FaTwitter className="w-4 h-4" />
+                          Twitter
+                        </a>
+                      )}
+                      {resume.contact.address && (
+                        <span className="flex items-center gap-1">
+                          <MdLocationOn className="w-4 h-4 text-[#4b5563]" />
+                          {resume.contact.address}
+                        </span>
+                      )}
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {/* Experience */}
-                {resume.experience && (
-                  <div>
-                    <h2 className="text-lg font-semibold text-gray-800 border-b pb-1 flex items-center gap-2">
-                      <FaBriefcase className="w-5 h-5 text-gray-600" />
-                      Experience
-                    </h2>
-                    <div className="space-y-4 mt-2">
-                      {resume.experience.map((exp: any, idx: number) => (
-                        <div key={idx} className="p-4">
-                          <p className="font-semibold text-gray-800">
-                            {exp.position || "Position not specified"} at{" "}
-                            {exp.company || "Company not specified"}
-                          </p>
-                          <p className="text-sm text-gray-600">
-                            {exp.duration ? `${exp.duration}` : ""}{" "}
-                            {exp.location ? `| ${exp.location}` : ""}
-                          </p>
-                          {exp.description && (
-                            <p className="text-sm text-gray-600 mt-2">
-                              {exp.description}
+                  {/* Summary */}
+                  {resume.summary && (
+                    <div>
+                      <h2 className="text-lg font-semibold text-[#1f2937] border-b border-[#e5e7eb] pb-1 flex items-center gap-2">
+                        <MdPerson className="w-5 h-5 text-[#4b5563]" />
+                        Summary
+                      </h2>
+                      <p className="text-[#4b5563] mt-2">{resume.summary}</p>
+                    </div>
+                  )}
+
+                  {/* Education */}
+                  {resume.education && (
+                    <div>
+                      <h2 className="text-lg font-semibold text-[#1f2937] border-b border-[#e5e7eb] pb-1 flex items-center gap-2">
+                        <FaGraduationCap className="w-5 h-5 text-[#4b5563]" />
+                        Education
+                      </h2>
+                      <div className="space-y-2 mt-2">
+                        {resume.education.map((edu: any, idx: number) => (
+                          <div key={idx} className="p-4">
+                            <p className="font-semibold text-[#1f2937]">
+                              {edu.degree}
                             </p>
-                          )}
-                        </div>
-                      ))}
+                            <p className="text-sm text-[#4b5563]">
+                              {typeof edu.institution === "object"
+                                ? edu.institution.name
+                                : edu.institution}{" "}
+                              {edu.year ? `(${edu.year})` : ""}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {/* Projects */}
-                {resume.projects && (
-                  <div>
-                    <h2 className="text-lg font-semibold text-gray-800 border-b pb-1 flex items-center gap-2">
-                      <FaProjectDiagram className="w-5 h-5 text-gray-600" />
-                      Projects
-                    </h2>
-                    <div className="space-y-4 mt-2">
-                      {resume.projects.map((proj: any, idx: number) => (
-                        <div key={idx} className="p-4">
-                          <p className="font-semibold text-gray-800">
-                            {proj.title}
-                          </p>
-                          <p className="text-sm text-gray-600 mt-2">
-                            {proj.description}
-                          </p>
-                          {proj.techStack && (
-                            <div className="flex flex-wrap gap-2 mt-2">
-                              {proj.techStack.map(
-                                (tech: string, techIdx: number) => (
+                  {/* Experience */}
+                  {resume.experience && (
+                    <div>
+                      <h2 className="text-lg font-semibold text-[#1f2937] border-b border-[#e5e7eb] pb-1 flex items-center gap-2">
+                        <FaBriefcase className="w-5 h-5 text-[#4b5563]" />
+                        Experience
+                      </h2>
+                      <div className="space-y-4 mt-2">
+                        {resume.experience.map((exp: any, idx: number) => (
+                          <div key={idx} className="p-4">
+                            <p className="font-semibold text-[#1f2937]">
+                              {exp.position || "Position not specified"} at{" "}
+                              {exp.company || "Company not specified"}
+                            </p>
+                            <p className="text-sm text-[#4b5563]">
+                              {exp.duration ? `${exp.duration}` : ""}{" "}
+                              {exp.location ? `| ${exp.location}` : ""}
+                            </p>
+                            {exp.description && (
+                              <p className="text-sm text-[#4b5563] mt-2">
+                                {exp.description}
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Projects */}
+                  {resume.projects && (
+                    <div>
+                      <h2 className="text-lg font-semibold text-[#1f2937] border-b border-[#e5e7eb] pb-1 flex items-center gap-2">
+                        <FaProjectDiagram className="w-5 h-5 text-[#4b5563]" />
+                        Projects
+                      </h2>
+                      <div className="space-y-4 mt-2">
+                        {resume.projects.map((proj: any, idx: number) => (
+                          <div key={idx} className="p-4">
+                            <p className="font-semibold text-[#1f2937]">
+                              {proj.title}
+                            </p>
+                            <p className="text-sm text-[#4b5563] mt-2">
+                              {proj.description}
+                            </p>
+                            {proj.techStack && (
+                              <div className="flex flex-wrap gap-2 mt-2">
+                                {proj.techStack.map(
+                                  (tech: string, techIdx: number) => (
+                                    <span
+                                      key={techIdx}
+                                      className="text-xs text-[#4b5563] border border-[#e5e7eb] px-2 py-1 rounded"
+                                    >
+                                      {tech}
+                                    </span>
+                                  )
+                                )}
+                              </div>
+                            )}
+                            {proj.deployment && (
+                              <a
+                                href={proj.deployment}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-[#1f2937] hover:text-[#1e40af] text-sm mt-2 inline-flex items-center gap-1"
+                              >
+                                View Project
+                              </a>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Skills */}
+                  {resume.skills && (
+                    <div>
+                      <h2 className="text-lg font-semibold text-[#1f2937] border-b border-[#e5e7eb] pb-1 flex items-center gap-2">
+                        <FaTools className="w-5 h-5 text-[#4b5563]" />
+                        Skills
+                      </h2>
+                      <div className="mt-2">
+                        {resume.skills.technical && (
+                          <div className="mb-2">
+                            <p className="text-sm font-medium text-[#1f2937]">
+                              Technical:
+                            </p>
+                            <div className="flex flex-wrap gap-2 mt-1">
+                              {resume.skills.technical.map(
+                                (skill: string, idx: number) => (
                                   <span
-                                    key={techIdx}
-                                    className="text-xs text-gray-600 border border-gray-200 px-2 py-1 rounded"
+                                    key={idx}
+                                    className="text-xs text-[#4b5563] border border-[#e5e7eb] px-2 py-1 rounded"
                                   >
-                                    {tech}
+                                    {skill}
                                   </span>
                                 )
                               )}
                             </div>
-                          )}
-                          {proj.deployment && (
-                            <a
-                              href={proj.deployment}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-600 hover:text-blue-800 text-sm mt-2 inline-flex items-center gap-1"
+                          </div>
+                        )}
+                        {resume.skills.soft && (
+                          <div>
+                            <p className="text-sm font-medium text-[#1f2937]">
+                              Soft:
+                            </p>
+                            <div className="flex flex-wrap gap-2 mt-1">
+                              {resume.skills.soft.map(
+                                (skill: string, idx: number) => (
+                                  <span
+                                    key={idx}
+                                    className="text-xs text-[#4b5563] border border-[#e5e7eb] px-2 py-1 rounded"
+                                  >
+                                    {skill}
+                                  </span>
+                                )
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Achievements */}
+                  {resume.achievements && (
+                    <div>
+                      <h2 className="text-lg font-semibold text-[#1f2937] border-b border-[#e5e7eb] pb-1 flex items-center gap-2">
+                        <FaTrophy className="w-5 h-5 text-[#4b5563]" />
+                        Achievements
+                      </h2>
+                      <ul className="list-disc list-inside text-sm text-[#4b5563] mt-2 space-y-1">
+                        {resume.achievements.map((ach: string, idx: number) => (
+                          <li key={idx}>{ach}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Certifications */}
+                  {resume.certifications && (
+                    <div>
+                      <h2 className="text-lg font-semibold text-[#1f2937] border-b border-[#e5e7eb] pb-1 flex items-center gap-2">
+                        <FaCertificate className="w-5 h-5 text-[#4b5563]" />
+                        Certifications
+                      </h2>
+                      <div className="flex flex-wrap gap-3 mt-2">
+                        {resume.certifications.map(
+                          (cert: string, idx: number) => (
+                            <div
+                              key={idx}
+                              className="flex items-center gap-2 text-sm text-[#4b5563] px-1 pb-2"
                             >
-                              View Project
-                            </a>
-                          )}
-                        </div>
-                      ))}
+                              <span className="text-[#4b5563] text-lg">•</span>
+                              {cert}
+                            </div>
+                          )
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {/* Skills */}
-                {resume.skills && (
-                  <div>
-                    <h2 className="text-lg font-semibold text-gray-800 border-b pb-1 flex items-center gap-2">
-                      <FaTools className="w-5 h-5 text-gray-600" />
-                      Skills
-                    </h2>
-                    <div className="mt-2">
-                      {resume.skills.technical && (
-                        <div className="mb-2">
-                          <p className="text-sm font-medium text-gray-700">
-                            Technical:
-                          </p>
-                          <div className="flex flex-wrap gap-2 mt-1">
-                            {resume.skills.technical.map(
-                              (skill: string, idx: number) => (
-                                <span
-                                  key={idx}
-                                  className="text-xs text-gray-600 border border-gray-200 px-2 py-1 rounded"
-                                >
-                                  {skill}
-                                </span>
-                              )
-                            )}
-                          </div>
-                        </div>
-                      )}
-                      {resume.skills.soft && (
-                        <div>
-                          <p className="text-sm font-medium text-gray-700">
-                            Soft:
-                          </p>
-                          <div className="flex flex-wrap gap-2 mt-1">
-                            {resume.skills.soft.map(
-                              (skill: string, idx: number) => (
-                                <span
-                                  key={idx}
-                                  className="text-xs text-gray-600 border border-gray-200 px-2 py-1 rounded"
-                                >
-                                  {skill}
-                                </span>
-                              )
-                            )}
-                          </div>
-                        </div>
-                      )}
+                  {/* Volunteer Work / Extracurriculars */}
+                  {resume.volunteer && (
+                    <div>
+                      <h2 className="text-lg font-semibold text-[#1f2937] border-b border-[#e5e7eb] pb-1 flex items-center gap-2">
+                        <FaHandshake className="w-5 h-5 text-[#4b5563]" />
+                        Volunteer / Extracurriculars
+                      </h2>
+                      <ul className="list-disc list-inside text-sm text-[#4b5563] mt-2 space-y-1">
+                        {resume.volunteer.map((item: string, idx: number) => (
+                          <li key={idx}>{item}</li>
+                        ))}
+                      </ul>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {/* Achievements */}
-                {resume.achievements && (
-                  <div>
-                    <h2 className="text-lg font-semibold text-gray-800 border-b pb-1 flex items-center gap-2">
-                      <FaTrophy className="w-5 h-5 text-gray-600" />
-                      Achievements
-                    </h2>
-                    <ul className="list-disc list-inside text-sm text-gray-600 mt-2 space-y-1">
-                      {resume.achievements.map((ach: string, idx: number) => (
-                        <li key={idx}>{ach}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+                  {/* Publications */}
+                  {resume.publications && (
+                    <div>
+                      <h2 className="text-lg font-semibold text-[#1f2937] border-b border-[#e5e7eb] pb-1 flex items-center gap-2">
+                        <FaBook className="w-5 h-5 text-[#4b5563]" />
+                        Publications
+                      </h2>
+                      <ul className="list-disc list-inside text-sm text-[#4b5563] mt-2 space-y-1">
+                        {resume.publications.map((pub: string, idx: number) => (
+                          <li key={idx}>{pub}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
 
-                {/* Certifications */}
-                {resume.certifications && (
-                  <div>
-                    <h2 className="text-lg font-semibold text-gray-800 border-b pb-1 flex items-center gap-2">
-                      <FaCertificate className="w-5 h-5 text-gray-600" />
-                      Certifications
-                    </h2>
-                    <div className="flex flex-wrap gap-3 mt-2">
-                      {resume.certifications.map(
-                        (cert: string, idx: number) => (
-                          <div
+                  {/* Languages */}
+                  {resume.languages && (
+                    <div>
+                      <h2 className="text-lg font-semibold text-[#1f2937] border-b border-[#e5e7eb] pb-1 flex items-center gap-2">
+                        <FaLanguage className="w-5 h-5 text-[#4b5563]" />
+                        Languages
+                      </h2>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {resume.languages.map((lang: string, idx: number) => (
+                          <span
                             key={idx}
-                            className="flex items-center gap-2 text-sm text-gray-600 px-1 pb-2"
+                            className="text-xs text-[#4b5563] border border-[#e5e7eb] px-2 py-1 rounded"
                           >
-                            <span className="text-gray-500 text-lg">•</span>
-                            {cert}
+                            {lang}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Hobbies */}
+                  {resume.hobbies && (
+                    <div>
+                      <h2 className="text-lg font-semibold text-[#1f2937] border-b border-[#e5e7eb] pb-1 flex items-center gap-2">
+                        <FaGamepad className="w-5 h-5 text-[#4b5563]" />
+                        Hobbies / Interests
+                      </h2>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {resume.hobbies.map((hobby: string, idx: number) => (
+                          <span
+                            key={idx}
+                            className="text-xs text-[#4b5563] border border-[#e5e7eb] px-2 py-1 rounded"
+                          >
+                            {hobby}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* References */}
+                  {resume.references && (
+                    <div>
+                      <h2 className="text-lg font-semibold text-[#1f2937] border-b border-[#e5e7eb] pb-1 flex items-center gap-2">
+                        <FaUserFriends className="w-5 h-5 text-[#4b5563]" />
+                        References
+                      </h2>
+                      <div className="space-y-4 mt-2">
+                        {resume.references.map((ref: any, idx: number) => (
+                          <div key={idx} className="p-4">
+                            <p className="font-semibold text-[#1f2937]">
+                              {ref.name || "Name not provided"}
+                            </p>
+                            {ref.company && (
+                              <p className="text-sm text-[#4b5563]">
+                                Company: {ref.company}
+                              </p>
+                            )}
+                            {ref.position && (
+                              <p className="text-sm text-[#4b5563]">
+                                Position: {ref.position}
+                              </p>
+                            )}
+                            {ref.phone && (
+                              <p className="text-sm text-[#4b5563]">
+                                Phone: {ref.phone}
+                              </p>
+                            )}
+                            {ref.email && (
+                              <p className="text-sm text-[#4b5563]">
+                                Email: {ref.email}
+                              </p>
+                            )}
                           </div>
-                        )
-                      )}
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
-
-                {/* Volunteer Work / Extracurriculars */}
-                {resume.volunteer && (
-                  <div>
-                    <h2 className="text-lg font-semibold text-gray-800 border-b pb-1 flex items-center gap-2">
-                      <FaHandshake className="w-5 h-5 text-gray-600" />
-                      Volunteer / Extracurriculars
-                    </h2>
-                    <ul className="list-disc list-inside text-sm text-gray-600 mt-2 space-y-1">
-                      {resume.volunteer.map((item: string, idx: number) => (
-                        <li key={idx}>{item}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* Publications */}
-                {resume.publications && (
-                  <div>
-                    <h2 className="text-lg font-semibold text-gray-800 border-b pb-1 flex items-center gap-2">
-                      <FaBook className="w-5 h-5 text-gray-600" />
-                      Publications
-                    </h2>
-                    <ul className="list-disc list-inside text-sm text-gray-600 mt-2 space-y-1">
-                      {resume.publications.map((pub: string, idx: number) => (
-                        <li key={idx}>{pub}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* Languages */}
-                {resume.languages && (
-                  <div>
-                    <h2 className="text-lg font-semibold text-gray-800 border-b pb-1 flex items-center gap-2">
-                      <FaLanguage className="w-5 h-5 text-gray-600" />
-                      Languages
-                    </h2>
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {resume.languages.map((lang: string, idx: number) => (
-                        <span
-                          key={idx}
-                          className="text-xs text-gray-600 border border-gray-200 px-2 py-1 rounded"
-                        >
-                          {lang}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Hobbies */}
-                {resume.hobbies && (
-                  <div>
-                    <h2 className="text-lg font-semibold text-gray-800 border-b pb-1 flex items-center gap-2">
-                      <FaGamepad className="w-5 h-5 text-gray-600" />
-                      Hobbies / Interests
-                    </h2>
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {resume.hobbies.map((hobby: string, idx: number) => (
-                        <span
-                          key={idx}
-                          className="text-xs text-gray-600 border border-gray-200 px-2 py-1 rounded"
-                        >
-                          {hobby}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* References */}
-                {resume.references && (
-                  <div>
-                    <h2 className="text-lg font-semibold text-gray-800 border-b pb-1 flex items-center gap-2">
-                      <FaUserFriends className="w-5 h-5 text-gray-600" />
-                      References
-                    </h2>
-                    <div className="space-y-4 mt-2">
-                      {resume.references.map((ref: any, idx: number) => (
-                        <div key={idx} className="p-4">
-                          <p className="font-semibold text-gray-800">
-                            {ref.name || "Name not provided"}
-                          </p>
-                          {ref.company && (
-                            <p className="text-sm text-gray-600">
-                              Company: {ref.company}
-                            </p>
-                          )}
-                          {ref.position && (
-                            <p className="text-sm text-gray-600">
-                              Position: {ref.position}
-                            </p>
-                          )}
-                          {ref.phone && (
-                            <p className="text-sm text-gray-600">
-                              Phone: {ref.phone}
-                            </p>
-                          )}
-                          {ref.email && (
-                            <p className="text-sm text-gray-600">
-                              Email: {ref.email}
-                            </p>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center h-full text-gray-500">
