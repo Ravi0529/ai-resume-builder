@@ -53,14 +53,30 @@ export default function Builder() {
             <h1 className="text-2xl font-bold">{resume.name}</h1>
 
             {/* Contact */}
-            <div className="text-sm text-gray-600 space-y-1">
-              {resume.contact?.email && <p>Email: {resume.contact.email}</p>}
-              {resume.contact?.phone && <p>Phone: {resume.contact.phone}</p>}
-              {resume.contact?.linkedin && (
-                <p>LinkedIn: {resume.contact.linkedin}</p>
-              )}
-              {resume.contact?.github && <p>GitHub: {resume.contact.github}</p>}
-            </div>
+            {resume.contact && (
+              <div className="flex flex-wrap text-sm text-gray-600 gap-x-6 gap-y-1">
+                {resume.contact.email && <p>Email: {resume.contact.email}</p>}
+                {resume.contact.phone && <p>Phone: {resume.contact.phone}</p>}
+                {resume.contact.linkedin && (
+                  <p>LinkedIn: {resume.contact.linkedin}</p>
+                )}
+                {resume.contact.github && (
+                  <p>GitHub: {resume.contact.github}</p>
+                )}
+                {resume.contact.website && (
+                  <p>Website: {resume.contact.website}</p>
+                )}
+                {resume.contact.twitter && (
+                  <p>Twitter: {resume.contact.twitter}</p>
+                )}
+                {resume.contact.portfolio && (
+                  <p>Portfolio: {resume.contact.portfolio}</p>
+                )}
+                {resume.contact.address && (
+                  <p>Address: {resume.contact.address}</p>
+                )}
+              </div>
+            )}
 
             {/* Summary */}
             {resume.summary && (
@@ -95,11 +111,18 @@ export default function Builder() {
                   Experience
                 </h2>
                 {resume.experience.map((exp: any, idx: number) => (
-                  <div key={idx}>
+                  <div key={idx} className="mb-2">
                     <p className="font-semibold">
-                      {exp.position} at {exp.company} ({exp.duration})
+                      {exp.position || "Position not specified"} at{" "}
+                      {exp.company || "Company not specified"}
                     </p>
-                    <p className="text-sm">{exp.description}</p>
+                    <p className="text-sm text-gray-600">
+                      {exp.duration ? `${exp.duration}` : ""}{" "}
+                      {exp.location ? `| ${exp.location}` : ""}
+                    </p>
+                    {exp.description && (
+                      <p className="text-sm mt-1">{exp.description}</p>
+                    )}
                   </div>
                 ))}
               </div>
@@ -172,6 +195,76 @@ export default function Builder() {
                 <ul className="list-disc list-inside text-sm">
                   {resume.certifications.map((cert: string, idx: number) => (
                     <li key={idx}>{cert}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Volunteer Work / Extracurriculars */}
+            {resume.volunteer && (
+              <div>
+                <h2 className="text-lg font-semibold border-b pb-1">
+                  Volunteer / Extracurriculars
+                </h2>
+                <ul className="list-disc list-inside text-sm">
+                  {resume.volunteer.map((item: string, idx: number) => (
+                    <li key={idx}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Publications */}
+            {resume.publications && (
+              <div>
+                <h2 className="text-lg font-semibold border-b pb-1">
+                  Publications
+                </h2>
+                <ul className="list-disc list-inside text-sm">
+                  {resume.publications.map((pub: string, idx: number) => (
+                    <li key={idx}>{pub}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Languages */}
+            {resume.languages && (
+              <div>
+                <h2 className="text-lg font-semibold border-b pb-1">
+                  Languages
+                </h2>
+                <p className="text-sm">{resume.languages.join(", ")}</p>
+              </div>
+            )}
+
+            {/* Hobbies */}
+            {resume.hobbies && (
+              <div>
+                <h2 className="text-lg font-semibold border-b pb-1">
+                  Hobbies / Interests
+                </h2>
+                <p className="text-sm">{resume.hobbies.join(", ")}</p>
+              </div>
+            )}
+
+            {/* References */}
+            {resume.references && (
+              <div>
+                <h2 className="text-lg font-semibold border-b pb-1">
+                  References
+                </h2>
+                <ul className="list-disc list-inside text-sm space-y-2">
+                  {resume.references.map((ref: any, idx: number) => (
+                    <li key={idx}>
+                      <p>
+                        <strong>{ref.name || "Name not provided"}</strong>
+                      </p>
+                      {ref.company && <p>Company: {ref.company}</p>}
+                      {ref.position && <p>Position: {ref.position}</p>}
+                      {ref.phone && <p>Phone: {ref.phone}</p>}
+                      {ref.email && <p>Email: {ref.email}</p>}
+                    </li>
                   ))}
                 </ul>
               </div>
